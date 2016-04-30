@@ -8,34 +8,45 @@ app.get('/', function (req, res) {
 });
 
 //////////////////////////////////////////////////////
-// usernames which are currently connected to the chat
+// declare our variables for this instance of the chat
 var usernames = {};
+var rooms = ['happy', 'sad', 'angry'];
+
 
 io.sockets.on('connection', function (socket) {
 
-    ///////////////////////////////////////////////////
-    // when the client emits 'sendchat', this listens and executes
-    socket.on('sendchat', function (data) {
-        // we tell the client to execute 'updatechat' with 2 parameters
-        io.sockets.emit('updatechat', socket.username, data);
-    });
-
-    /////////////////////////////////////////////////
-    // when the client emits 'adduser', this goes off
+    // when the client emits 'adduser', this listens and executes
     socket.on('adduser', function(username){
         socket.username = username;
+        socket.room = 'happy';
         usernames[username] = username;
-        socket.emit('updatechat', 'SERVER', 'you have connected');
-        socket.broadcast.emit('updatechat', 'SERVER', username + ' has connected');
-        io.sockets.emit('updateusers', usernames);
+        socket.join('happy');
+        socket.emit('updatechat', 'SERVER', 'Welcome to the happy chat!');
+        socket.broadcast.to('happy').emit('updatechat', 'SERVER', 'give ' + username + ' a warm hello as they have joined the chat!');
+        socket.emit('updaterooms', rooms, 'happy');
+        socket.emit('updateusers', usernames);
     });
 
-    ///////////////////////////////////////////////////
-    // whenever a user disconnects, this will fire off!
+    socket.on('sendchat', function (data) {
+        io.sockets.in(socket.room).emit('updatechat', socket.username, data);
+    });
+
+    socket.on('switchRoom', function(newroom){
+        socket.leave(socket.room);
+        socket.join(newroom);
+        socket.emit('updatechat', 'SERVER', 'Welcome to the '+ newroom + ' room!');
+        socket.broadcast.to(socket.room).emit('updatechat', 'SERVER', socket.username+' has left this room');
+        socket.room = newroom;
+        socket.broadcast.to(newroom).emit('updatechat', 'SERVER', socket.username+' has joined this room');
+        socket.emit('updaterooms', rooms, newroom);
+    });
+
+    // when the user disconnects.. perform this
     socket.on('disconnect', function(){
         delete usernames[socket.username];
         io.sockets.emit('updateusers', usernames);
         socket.broadcast.emit('updatechat', 'SERVER', socket.username + ' has disconnected');
+        socket.leave(socket.room);
     });
 });
 
