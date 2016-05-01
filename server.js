@@ -1,4 +1,5 @@
-var app = require('express')();
+var express = require('express')
+var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
@@ -50,6 +51,10 @@ io.sockets.on('connection', function (socket) {
     });
 });
 
+app.use('/public', express.static(__dirname + '/public'));
+
 http.listen(1337, function(){
     console.log('listening on *:1337');
 });
+
+require('whiteboard.io');
