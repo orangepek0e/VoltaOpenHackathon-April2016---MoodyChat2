@@ -18,14 +18,20 @@ io.sockets.on('connection', function (socket) {
 
     // when the client emits 'adduser', this listens and executes
     socket.on('adduser', function(username){
-        socket.username = username;
-        socket.room = 'happy';
-        usernames[username] = username;
-        socket.join('happy');
-        socket.emit('updatechat', 'SERVER', 'Welcome to the happy chat!');
-        socket.broadcast.to('happy').emit('updatechat', 'SERVER', 'give ' + username + ' a warm hello as they have joined the chat!');
-        socket.emit('updaterooms', rooms, 'happy');
-        socket.emit('updateusers', usernames);
+        if (username == null){
+            socket.emit('updatechat', 'SERVER', 'Error. Please reload and enter a username.');
+            return;
+        }
+        else{
+            socket.username = username;
+            socket.room = 'happy';
+            usernames[username] = username;
+            socket.join('happy');
+            socket.emit('updatechat', 'SERVER', 'Welcome to the happy chat!');
+            socket.broadcast.to('happy').emit('updatechat', 'SERVER', 'give ' + username + ' a warm hello as they have joined the chat!');
+            socket.emit('updaterooms', rooms, 'happy');
+            socket.emit('updateusers', usernames);
+        }
     });
 
     socket.on('sendchat', function (data) {
